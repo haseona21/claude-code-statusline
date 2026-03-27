@@ -1,19 +1,19 @@
 # Claude Code Status Line
 
-A custom status line for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that shows your current directory, model, context window usage, and **today's API spend** — right in the terminal.
+A custom status line for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that shows your model, context window usage, **today's API spend**, and **lifetime total** — right in the terminal.
 
 ```
-myproject | Opus 4.6 | ctx: 32.5% | today: $5.43
+Opus 4.6 | ctx: 32.5% | today: $5.43 | total: $36.02
 ```
 
 ## What it shows
 
 | Segment | Description |
 |---------|-------------|
-| `myproject` | Current working directory (basename) |
 | `Opus 4.6` | Active model |
 | `ctx: 32.5%` | Context window usage (with `!` / `!!` / `!!!` warnings at 50/75/90%) |
 | `today: $5.43` | Today's cumulative API spend via [ccusage](https://github.com/ryoppippi/ccusage) |
+| `total: $36.02` | Lifetime total API spend |
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ myproject | Opus 4.6 | ctx: 32.5% | today: $5.43
 **1. Install the script:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alibrohde/claude-code-statusline/main/statusline-command.sh \
+curl -fsSL https://raw.githubusercontent.com/haseona21/claude-code-statusline/main/statusline-command.sh \
   -o ~/.claude/statusline-command.sh && chmod +x ~/.claude/statusline-command.sh
 ```
 
@@ -56,3 +56,7 @@ To change the cache duration, edit the `60` in `[ "$cache_age" -ge 60 ]`.
 ## Note on `stat`
 
 The script handles both macOS (`stat -f %m`) and Linux (`stat -c %Y`) for file modification time.
+
+## Author
+
+Made by [Mae Tse](https://github.com/haseona21)
