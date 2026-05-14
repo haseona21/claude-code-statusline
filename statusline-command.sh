@@ -1,108 +1,66 @@
 #!/usr/bin/env bash
 #
 # Claude Code status line script
-# Shows: directory | model | context usage | today's API spend
-#
-# Requires: ccusage (npm install -g ccusage)
-# Setup:    See README.md
+# Shows: random anime quote
 
-input=$(cat)
+# --- Random anime quote (cached for 300s) ---
+anime_quotes=(
+    "Believe in the me that believes in you. - Kamina (Gurren Lagann)"
+    "If you don't take risks, you can't create a future. - Luffy (One Piece)"
+    "A lesson without pain is meaningless. - Edward Elric (FMA: Brotherhood)"
+    "The world isn't perfect. But it's there for us, trying the best it can. - Roy Mustang (FMA: Brotherhood)"
+    "People's lives don't end when they die. It ends when they lose faith. - Itachi (Naruto Shippuden)"
+    "Fear is not evil. It tells you what your weakness is. - Gildarts (Fairy Tail)"
+    "Whatever you lose, you'll find it again. But what you throw away you'll never get back. - Kenshin (Rurouni Kenshin)"
+    "If you don't like your destiny, don't accept it. - Naruto (Naruto)"
+    "Power comes in response to a need, not a desire. - Goku (Dragon Ball Z)"
+    "The only thing we're allowed to do is believe we won't regret the choice we made. - Levi (Attack on Titan)"
+    "You should enjoy the little detours to the fullest. That's where you'll find things more important than what you want. - Ging (Hunter x Hunter)"
+    "Giving up kills people. When people reject giving up, they finally win the right to transcend humanity. - Alucard (Hellsing)"
+    "Being weak is nothing to be ashamed of. Staying weak is. - Fuegoleon (Black Clover)"
+    "Reject common sense to make the impossible possible. - Simon (Gurren Lagann)"
+    "A dropout will beat a genius through hard work. - Rock Lee (Naruto)"
+    "The moment you think of giving up, think of the reason why you held on so long. - Natsu (Fairy Tail)"
+    "I'll leave tomorrow's problems to tomorrow's me. - Saitama (One Punch Man)"
+    "When do you think people die? When they are forgotten. - Dr. Hiluluk (One Piece)"
+    "In this world, wherever there is light, there are always shadows. - Madara (Naruto Shippuden)"
+    "Life is not a game of luck. If you wanna win, work hard. - Sora (No Game No Life)"
+    "Simplicity is the easiest path to true beauty. - Seishuu (Barakamon)"
+    "We don't have to know what tomorrow holds. That's why we can live for everything we're worth today. - Natsu (Fairy Tail)"
+    "The night is darkest before the dawn. But keep your eyes open. If you avert your eyes from the dark, you'll be blind to the light. - Kakashi (Naruto)"
+    "It's not about whether you get knocked down. It's about whether you get back up. - Vash (Trigun)"
+    "Those who stand at the top determine what's wrong and what's right. - Sousuke Aizen (Bleach)"
+    "Even if I can't see you, I'll always be watching over you. - Makarov (Fairy Tail)"
+    "There's no shame in falling down. True shame is not standing up again. - Midoriya (My Hero Academia)"
+    "The ticket to the future is always open. - Vash (Trigun)"
+    "Sometimes I do feel like I'm a failure. Like there's no hope for me. But even so, I'm not gonna give up. - Izuku (My Hero Academia)"
+    "A person grows up when he's able to overcome hardships. - Jiraiya (Naruto)"
+)
 
-get_val() {
-    echo "$input" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" |
-    head -1 | sed 's/.*:[[:space:]]*"//;s/"$//'
-}
-
-get_num() {
-    echo "$input" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*[0-9.]*" |
-    head -1 | sed 's/.*:[[:space:]]*//'
-}
-
-cwd=$(get_val "current_dir")
-[ -z "$cwd" ] && cwd=$(get_val "cwd")
-[ -z "$cwd" ] && cwd="unknown"
-
-model=$(get_val "display_name")
-[ -z "$model" ] && model="unknown"
-
-used=$(get_num "used_percentage")
-dir=$(basename "$cwd")
-
-# --- Today's spend (cached for 60s) ---
-cache_file="/tmp/.ccusage_daily_cache"
-cache_date_file="/tmp/.ccusage_daily_date"
 now=$(date +%s)
-today=$(date +%Y%m%d)
-cached_date=""
-[ -f "$cache_date_file" ] && cached_date=$(cat "$cache_date_file")
-
-refresh=0
-if [ -f "$cache_file" ] && [ "$cached_date" = "$today" ]; then
-    cache_age=$(( now - $(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null) ))
-    [ "$cache_age" -ge 60 ] && refresh=1
+quote_cache="/tmp/.anime_quote_cache"
+quote_refresh=0
+if [ -f "$quote_cache" ]; then
+    quote_age=$(( now - $(stat -f %m "$quote_cache" 2>/dev/null || stat -c %Y "$quote_cache" 2>/dev/null) ))
+    [ "$quote_age" -ge 300 ] && quote_refresh=1
 else
-    refresh=1
+    quote_refresh=1
 fi
 
-if [ "$refresh" -eq 1 ]; then
-    cost_json=$(ccusage daily --since "$today" --json --offline 2>/dev/null)
-    spend=$(echo "$cost_json" | grep -o '"totalCost"[[:space:]]*:[[:space:]]*[0-9.]*' | head -1 | sed 's/.*:[[:space:]]*//')
-    if [ -n "$spend" ]; then
-        printf "%s" "$spend" > "$cache_file"
-        printf "%s" "$today" > "$cache_date_file"
-    fi
+if [ "$quote_refresh" -eq 1 ]; then
+    quote_index=$(( RANDOM % ${#anime_quotes[@]} ))
+    quote="${anime_quotes[$quote_index]}"
+    printf "%s" "$quote" > "$quote_cache"
 else
-    spend=$(cat "$cache_file" 2>/dev/null)
+    quote=$(cat "$quote_cache" 2>/dev/null)
 fi
 
-[ -z "$spend" ] && spend="--"
-if [ "$spend" != "--" ]; then
-    spend_display=$(printf "$%.2f" "$spend")
-else
-    spend_display="$--"
+quote_line1=$(printf "%s" "$quote" | cut -c1-90)
+quote_line2=""
+if [ ${#quote} -gt 90 ]; then
+    quote_line1=$(printf "%.90s" "$quote" | sed 's/ [^ ]*$//')
+    quote_line2=${quote:${#quote_line1}}
+    quote_line2=$(printf "%s" "$quote_line2" | sed 's/^ //')
 fi
-
-# --- Lifetime spend (cached for 300s) ---
-lifetime_cache="/tmp/.ccusage_lifetime_cache"
-lifetime_refresh=0
-if [ -f "$lifetime_cache" ]; then
-    lifetime_age=$(( now - $(stat -f %m "$lifetime_cache" 2>/dev/null || stat -c %Y "$lifetime_cache" 2>/dev/null) ))
-    [ "$lifetime_age" -ge 300 ] && lifetime_refresh=1
-else
-    lifetime_refresh=1
-fi
-
-if [ "$lifetime_refresh" -eq 1 ]; then
-    lifetime_json=$(ccusage daily --json --offline 2>/dev/null)
-    # totals.totalCost is the last totalCost in the JSON
-    lifetime=$(echo "$lifetime_json" | grep -o '"totalCost"[[:space:]]*:[[:space:]]*[0-9.]*' | tail -1 | sed 's/.*:[[:space:]]*//')
-    if [ -n "$lifetime" ]; then
-        printf "%s" "$lifetime" > "$lifetime_cache"
-    fi
-else
-    lifetime=$(cat "$lifetime_cache" 2>/dev/null)
-fi
-
-[ -z "$lifetime" ] && lifetime="--"
-if [ "$lifetime" != "--" ]; then
-    lifetime_display=$(printf "$%.2f" "$lifetime")
-else
-    lifetime_display="$--"
-fi
-
-# --- Context display ---
-if [ -n "$used" ]; then
-    used_int=${used%.*}
-    if [ -n "$used_int" ] && [ "$used_int" -ge 90 ]; then
-        ctx_display="ctx: ${used}% [!!!]"
-    elif [ -n "$used_int" ] && [ "$used_int" -ge 75 ]; then
-        ctx_display="ctx: ${used}% [!!]"
-    elif [ -n "$used_int" ] && [ "$used_int" -ge 50 ]; then
-        ctx_display="ctx: ${used}% [!]"
-    else
-        ctx_display="ctx: ${used}%"
-    fi
-    printf "%s | %s | today: %s | total: %s" "$model" "$ctx_display" "$spend_display" "$lifetime_display"
-else
-    printf "%s | ctx: -- | today: %s | total: %s" "$model" "$spend_display" "$lifetime_display"
-fi
+printf "%s" "$quote_line1"
+[ -n "$quote_line2" ] && printf "\n%s" "$quote_line2"
